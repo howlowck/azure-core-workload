@@ -57,9 +57,9 @@ if (!argv.h && !Object.keys(argv).includes('help')) {
 	const subInfo = JSON.parse(subInfoRaw)
 
 	const proceed = (await question(chalk.bgYellow.black(`
- ❓ Continue with this subscription? [y/N]
+ ❓ Continue with this subscription? [Y/n]
 `) + `${subInfo.name} (${subInfo.id})
-`)).toLowerCase()
+`)).toLowerCase() || 'y'
 
 	if (proceed !== 'y' && proceed !== 'yes') {
 		console.log('⛔ Exited: You chose not to continue. ')
@@ -128,6 +128,7 @@ if (!argv.h && !Object.keys(argv).includes('help')) {
 	/**
 	 * Generate Command Line
 	 */
+	const dirTf = await question('Which Terraform config directory would you like to init? \n')
 	const command = `terraform init -backend-config="resource_group_name=${resourceGroup}" -backend-config="storage_account_name=${storageName}" -backend-config="container_name=${containerName}" -backend-config="key=terraform.tfstate"`
 	console.log(`Ready to Run the command to initialize terraform:`)
 	console.log(command)
@@ -135,7 +136,7 @@ if (!argv.h && !Object.keys(argv).includes('help')) {
 	if (runCommand === 'y' || runCommand === 'yes') {
 		console.log('Initializing Terraform')
 		$.verbose = true
-		await cd('infrastructure/terraform')
+		await cd(`terraform/${dirTf}`)
 		await $`terraform init -backend-config="resource_group_name=${resourceGroup}" -backend-config="storage_account_name=${storageName}" -backend-config="container_name=${containerName}" -backend-config="key=terraform.tfstate"`
 		console.log(chalk.green('✔ Terraform Initialized with Azure Backend'))
 	} else {
