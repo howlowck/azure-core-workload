@@ -29,10 +29,16 @@ resource "azurerm_resource_group" "bot" {
 }
 
 resource "azuread_application" "bot" {
-  display_name = "${var.product} ${var.environment} App"
-  owners       = [
+  display_name     = "${var.product} ${var.environment} App"
+  sign_in_audience = "AzureADandPersonalMicrosoftAccount"
+
+  owners = [
     data.azurerm_client_config.current.object_id
   ]
+
+  api {
+    requested_access_token_version = 2
+  }
 }
 
 resource "azuread_application_password" "bot" {
@@ -67,7 +73,7 @@ resource "azurerm_app_service" "bot" {
   }
 
   app_settings = {
-    "MicrosoftAppId" = azuread_application.bot.application_id
+    "MicrosoftAppId"       = azuread_application.bot.application_id
     "MicrosoftAppPassword" = azuread_application_password.bot.value
   }
 }
@@ -77,9 +83,7 @@ resource "azurerm_bot_web_app" "bot" {
   display_name        = "${var.product} ${var.environment}"
   location            = "global"
   resource_group_name = azurerm_resource_group.bot.name
-  # endpoint            = "https://${lower(local.bot_name)}.azurewebsites.net/api/messages"
+  endpoint            = "https://${lower(azurerm_app_service.bot.name)}.azurewebsites.net/api/messages"
   sku                 = "F0"
   microsoft_app_id    = azuread_application.bot.application_id
 }
-
-
