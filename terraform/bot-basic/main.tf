@@ -47,6 +47,7 @@ resource "azuread_application_password" "bot" {
 
 locals {
   bot_name = "bot-${var.product}-${var.environment}"
+  webapp_endpoint = "https://${lower(azurerm_app_service.bot.name)}.azurewebsites.net/api/messages"
 }
 
 resource "azurerm_app_service_plan" "bot" {
@@ -83,7 +84,19 @@ resource "azurerm_bot_web_app" "bot" {
   display_name        = "${var.product} ${var.environment}"
   location            = "global"
   resource_group_name = azurerm_resource_group.bot.name
-  endpoint            = "https://${lower(azurerm_app_service.bot.name)}.azurewebsites.net/api/messages"
+  endpoint            = local.webapp_endpoint
   sku                 = "F0"
   microsoft_app_id    = azuread_application.bot.application_id
+}
+
+resource "azurerm_bot_channel_directline" "bot" {
+  bot_name            = azurerm_bot_web_app.bot.name
+  location            = azurerm_bot_web_app.bot.location
+  resource_group_name = azurerm_resource_group.bot.name
+
+  site {
+    name    = "default"
+    enhanced_authentication_enabled = false
+    enabled = true
+  }
 }
