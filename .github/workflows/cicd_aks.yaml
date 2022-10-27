@@ -1,0 +1,56 @@
+name: 'CICD AKS'
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/aks-basic/**'
+
+jobs:
+  terraform-plan-prod:
+    name: 'Terraform Plan Prod'
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_AD_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+    runs-on: ubuntu-latest
+    environment: prod
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        working-directory: ./terraform/aks-basic
+        shell: bash
+
+    steps:
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v2
+      - uses: hashicorp/setup-terraform@v1
+
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+
+      - run: >-
+          terraform init
+          -backend-config="storage_account_name=${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}"
+          -backend-config="container_name=${{ secrets.TF_BACKEND_STORAGE_CONTAINER }}"
+          -backend-config="key=${{ secrets.TF_BACKEND_STORAGE_KEY }}"
+          -backend-config="resource_group_name=${{ secrets.TF_BACKEND_STORAGE_RESOURCE_GROUP }}"
+
+      - run: terraform validate
+
+      - run: >-
+          terraform plan
+          -no-color
+          -out=prod.tfplan
+          -var="product=lifeishao"
+          -var="environment=prod"
+
+      - run: terraform apply -auto-approve prod.tfplan
+
