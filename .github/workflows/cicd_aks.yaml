@@ -58,8 +58,10 @@ jobs:
           azcliversion: 2.41.0
           inlineScript: |
             az aks get-credentials --admin --name aks-lifeishao-prod --resource-group rg-lifeishao-prod
-      - uses: actions-hub/kubectl@master
-        env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+      - uses: azure/setup-helm@v3
+        name: install helm
         with:
-          args: get pods
+          token: ${{ secrets.GITHUB_TOKEN }} # only needed if version is 'latest'
+      - uses: azure/setup-kubectl@v3
+        name: install kubectl
+      - run: kubectl get pods
