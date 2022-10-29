@@ -52,16 +52,14 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Azure CLI script
-        uses: azure/CLI@v1
-        with:
-          azcliversion: 2.41.0
-          inlineScript: |
-            az aks get-credentials --admin --name aks-lifeishao-prod --resource-group rg-lifeishao-prod
       - uses: azure/setup-helm@v3
         name: install helm
         with:
           token: ${{ secrets.GITHUB_TOKEN }} # only needed if version is 'latest'
       - uses: azure/setup-kubectl@v3
         name: install kubectl
+      - uses: azure/aks-set-context@v3
+        with:
+          resource-group: 'rg-lifeishao-prod'
+          cluster-name: 'aks-lifeishao-prod'
       - run: kubectl get pods
