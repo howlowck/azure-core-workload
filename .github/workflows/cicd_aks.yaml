@@ -30,27 +30,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - uses: hashicorp/setup-terraform@v1
-
       - name: Terraform fmt
         id: fmt
         run: terraform fmt -check
         continue-on-error: true
-
       - run: >-
           terraform init
           -backend-config="storage_account_name=${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}"
           -backend-config="container_name=${{ secrets.TF_BACKEND_STORAGE_CONTAINER }}"
           -backend-config="key=${{ secrets.TF_BACKEND_STORAGE_KEY }}"
           -backend-config="resource_group_name=${{ secrets.TF_BACKEND_STORAGE_RESOURCE_GROUP }}"
-
       - run: terraform validate
-
       - run: >-
           terraform plan
           -no-color
           -out=prod.tfplan
           -var="product=lifeishao"
           -var="environment=prod"
-
       - run: terraform apply -auto-approve prod.tfplan
-
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Azure CLI script
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.41.0
+          inlineScript: |
+            az aks get-credentials --admin --name aks-lifeishao-prod --resource-group rg-lifeishao-prod
+      - uses: actions-hub/kubectl@master
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        with:
+          args: get pods
