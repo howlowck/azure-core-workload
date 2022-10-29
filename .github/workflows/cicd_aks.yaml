@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - 'terraform/aks-basic/**'
+      - 'kubernetes/**'
 
 jobs:
   terraform-plan-prod:
@@ -16,6 +17,8 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.AZURE_AD_CLIENT_SECRET }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+      POSTGRES_SUPER_USER_PW: ${{ secrets.POSTGRES_SUPER_USER_PW }}
+      POSTGRES_REPLICA_USER_PW: ${{ secrets.POSTGRES_REPLICA_USER_PW }}
     runs-on: ubuntu-latest
     environment: prod
 
@@ -29,7 +32,7 @@ jobs:
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
         uses: actions/checkout@v2
-      - uses: hashicorp/setup-terraform@v1
+      - uses: hashicorp/setup-terraform@v2
       - name: Terraform fmt
         id: fmt
         run: terraform fmt -check
@@ -63,3 +66,7 @@ jobs:
           resource-group: 'rg-lifeishao-prod'
           cluster-name: 'aks-lifeishao-prod'
       - run: kubectl get pods
+      - run: |
+          kubectl apply -f ./kubernetes/kubegres/kubegres.yaml
+          envsubst < ./kubernetes/kubegres/secrets.yaml | kubectl apply -f 
+          kubectl apply -f ./kubernetes/kubegres/cluster.yaml
