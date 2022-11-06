@@ -29,7 +29,7 @@ resource "azurerm_kubernetes_cluster" "core" {
   default_node_pool {
     name       = "default"
     node_count = 3
-    vm_size    = "Standard_B2s" # x3 = ~$100
+    vm_size    = "Standard_B1ms" # x3 = ~$100
   }
 
   identity {
